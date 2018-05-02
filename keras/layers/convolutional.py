@@ -229,8 +229,9 @@ class AtrousConvolution1D(Convolution1D):
             If you don't specify anything, no activation is applied
             (ie. "linear" activation: a(x) = x).
         weights: list of numpy arrays to set as initial weights.
-        border_mode: 'valid', 'same', 'causal' or 'full'
+        border_mode: 'valid', 'same' or 'full'
             ('full' requires the Theano backend).
+        causal: results in causal (dilated) convolutions, e.g. output[t] does not depend on input[t+1:]. Useful when modeling temporal data where the model should not violate the temporal order.
         subsample_length: factor by which to subsample output.
         atrous_rate: Factor for kernel dilation. Also called filter_dilation
             elsewhere.
@@ -266,7 +267,7 @@ class AtrousConvolution1D(Convolution1D):
                  init='glorot_uniform', activation=None, weights=None,
                  border_mode='valid', subsample_length=1, atrous_rate=1,
                  W_regularizer=None, b_regularizer=None,
-                 activity_regularizer=None,
+                 activity_regularizer=None, causal=False,
                  W_constraint=None, b_constraint=None,
                  bias=True, **kwargs):
 
@@ -274,6 +275,7 @@ class AtrousConvolution1D(Convolution1D):
             raise ValueError('Invalid border mode for AtrousConv1D:', border_mode)
 
         self.atrous_rate = int(atrous_rate)
+        self.causal = causal
 
         super(AtrousConvolution1D, self).__init__(
             nb_filter, filter_length,
@@ -286,7 +288,7 @@ class AtrousConvolution1D(Convolution1D):
             bias=bias, **kwargs)
 
     def get_output_shape_for(self, input_shape):
-        if self.border_mode == 'causal':
+        if self.causal is True:
             shp = input_shape[1] + self.atrous_rate * (self.filter_length - 1)
         else:
             shp = input_shape[1]
@@ -298,7 +300,7 @@ class AtrousConvolution1D(Convolution1D):
         return (input_shape[0], length, self.nb_filter)
 
     def call(self, x, mask=None):
-        if self.border_mode == 'causal':
+        if self.causal is True:
             x = K.asymmetric_temporal_padding(x, self.atrous_rate * (self.filter_length - 1), 0)
         x = K.expand_dims(x, 2)  # add a dummy dimension
         output = K.conv2d(x, self.W, strides=self.subsample,
@@ -312,7 +314,7 @@ class AtrousConvolution1D(Convolution1D):
         return output
 
     def get_config(self):
-        config = {'atrous_rate': self.atrous_rate}
+        config = {'atrous_rate': self.atrous_rate, 'causal': self.causal}
         base_config = super(AtrousConvolution1D, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
