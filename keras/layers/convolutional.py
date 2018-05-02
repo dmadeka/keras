@@ -229,7 +229,7 @@ class AtrousConvolution1D(Convolution1D):
             If you don't specify anything, no activation is applied
             (ie. "linear" activation: a(x) = x).
         weights: list of numpy arrays to set as initial weights.
-        border_mode: 'valid', 'same' or 'full'
+        border_mode: 'valid', 'same', 'causal' or 'full'
             ('full' requires the Theano backend).
         subsample_length: factor by which to subsample output.
         atrous_rate: Factor for kernel dilation. Also called filter_dilation
@@ -286,7 +286,11 @@ class AtrousConvolution1D(Convolution1D):
             bias=bias, **kwargs)
 
     def get_output_shape_for(self, input_shape):
-        length = conv_output_length(input_shape[1],
+        if self.border_mode == 'causal':
+            shp = input_shape[1] + self.atrous_rate * (self.filter_length - 1)
+        else:
+            shp = input_shape[1]
+        length = conv_output_length(shp,
                                     self.filter_length,
                                     self.border_mode,
                                     self.subsample[0],
@@ -294,6 +298,8 @@ class AtrousConvolution1D(Convolution1D):
         return (input_shape[0], length, self.nb_filter)
 
     def call(self, x, mask=None):
+        if self.border_mode == 'causal':
+            x = K.asymmetric_temporal_padding(x, self.atrous_rate * (self.filter_length - 1), 0)
         x = K.expand_dims(x, 2)  # add a dummy dimension
         output = K.conv2d(x, self.W, strides=self.subsample,
                           border_mode=self.border_mode,
