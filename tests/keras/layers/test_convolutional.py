@@ -54,36 +54,34 @@ def test_atrous_conv_1d():
     input_dim = 2
     filter_length = 3
     nb_filter = 3
+    _atrous_border_modes = _convolution_border_modes + ['causal'] if K.backend() == 'mxnet' else _convolution_border_modes
 
-    for border_mode in _convolution_border_modes:
+    for border_mode in _atrous_border_modes:
         for subsample_length in [1, 2]:
             for atrous_rate in [1, 2]:
-                for causal in [True, False]:
-                    if border_mode == 'same' and subsample_length != 1:
-                        continue
-                    if subsample_length != 1 and atrous_rate != 1:
-                        continue
+                if border_mode == 'same' and subsample_length != 1:
+                    continue
+                if subsample_length != 1 and atrous_rate != 1:
+                    continue
 
-                    layer_test(convolutional.AtrousConv1D,
-                               kwargs={'nb_filter': nb_filter,
-                                       'filter_length': filter_length,
-                                       'border_mode': border_mode,
-                                       'subsample_length': subsample_length,
-                                       'atrous_rate': atrous_rate,
-                                       'causal': causal},
-                               input_shape=(nb_samples, nb_steps, input_dim))
+                layer_test(convolutional.AtrousConv1D,
+                           kwargs={'nb_filter': nb_filter,
+                                   'filter_length': filter_length,
+                                   'border_mode': border_mode,
+                                   'subsample_length': subsample_length,
+                                   'atrous_rate': atrous_rate},
+                           input_shape=(nb_samples, nb_steps, input_dim))
 
-                    layer_test(convolutional.AtrousConv1D,
-                               kwargs={'nb_filter': nb_filter,
-                                       'filter_length': filter_length,
-                                       'border_mode': border_mode,
-                                       'W_regularizer': 'l2',
-                                       'b_regularizer': 'l2',
-                                       'activity_regularizer': 'activity_l2',
-                                       'subsample_length': subsample_length,
-                                       'atrous_rate': atrous_rate,
-                                       'causal': causal},
-                               input_shape=(nb_samples, nb_steps, input_dim))
+                layer_test(convolutional.AtrousConv1D,
+                           kwargs={'nb_filter': nb_filter,
+                                   'filter_length': filter_length,
+                                   'border_mode': border_mode,
+                                   'W_regularizer': 'l2',
+                                   'b_regularizer': 'l2',
+                                   'activity_regularizer': 'activity_l2',
+                                   'subsample_length': subsample_length,
+                                   'atrous_rate': atrous_rate},
+                           input_shape=(nb_samples, nb_steps, input_dim))
 
 
 @keras_test

@@ -267,15 +267,22 @@ class AtrousConvolution1D(Convolution1D):
                  init='glorot_uniform', activation=None, weights=None,
                  border_mode='valid', subsample_length=1, atrous_rate=1,
                  W_regularizer=None, b_regularizer=None,
-                 activity_regularizer=None, causal=False,
+                 activity_regularizer=None,
                  W_constraint=None, b_constraint=None,
                  bias=True, **kwargs):
+
+        self.causal = False
+        if border_mode == 'causal':
+            if K.backend() != 'mxnet':
+                raise NotImplementedError("causal border mode is only implemented for MXNet")
+            else:
+                self.causal = True
+                border_mode = 'same'
 
         if border_mode not in {'valid', 'same', 'full'}:
             raise ValueError('Invalid border mode for AtrousConv1D:', border_mode)
 
         self.atrous_rate = int(atrous_rate)
-        self.causal = causal
 
         super(AtrousConvolution1D, self).__init__(
             nb_filter, filter_length,
@@ -314,7 +321,7 @@ class AtrousConvolution1D(Convolution1D):
         return output
 
     def get_config(self):
-        config = {'atrous_rate': self.atrous_rate, 'causal': self.causal}
+        config = {'atrous_rate': self.atrous_rate}
         base_config = super(AtrousConvolution1D, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
