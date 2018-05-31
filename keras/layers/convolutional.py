@@ -229,9 +229,12 @@ class AtrousConvolution1D(Convolution1D):
             If you don't specify anything, no activation is applied
             (ie. "linear" activation: a(x) = x).
         weights: list of numpy arrays to set as initial weights.
-        border_mode: 'valid', 'same' or 'full'
+        border_mode: 'valid', 'same', 'causal' or 'full'
             ('full' requires the Theano backend).
-        causal: results in causal (dilated) convolutions, e.g. output[t] does not depend on input[t+1:]. Useful when modeling temporal data where the model should not violate the temporal order.
+            ('causal' requires the MXNet backend). Results in causal (dilated)
+            convolutions, e.g. output[t] does not depend on input[t+1:]. Useful
+            when modeling temporal data where the model should not violate the
+            temporal order.
         subsample_length: factor by which to subsample output.
         atrous_rate: Factor for kernel dilation. Also called filter_dilation
             elsewhere.
@@ -277,7 +280,7 @@ class AtrousConvolution1D(Convolution1D):
                 raise NotImplementedError("causal border mode is only implemented for MXNet")
             else:
                 self.causal = True
-                border_mode = 'same'
+                border_mode = 'valid'
 
         if border_mode not in {'valid', 'same', 'full'}:
             raise ValueError('Invalid border mode for AtrousConv1D:', border_mode)
